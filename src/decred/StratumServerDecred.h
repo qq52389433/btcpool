@@ -57,6 +57,7 @@ private:
   void sendSolvedShare2Kafka(const FoundBlockDecred &foundBlock);
   
   unique_ptr<StratumProtocolDecred> protocol_;
+  NetworkDecred network_;
 };
 
 #endif

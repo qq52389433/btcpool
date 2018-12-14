@@ -306,7 +306,6 @@ public:
 
   BlockHeaderDecred header_;
   uint256 target_;
-  NetworkDecred network_;
 
   StratumJobDecred();
   string serializeToJson() const override;

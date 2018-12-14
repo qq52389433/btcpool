@@ -35,8 +35,7 @@ class GwMakerHandlerDecred : public GwMakerHandlerJson
   string constructRawMsg(JsonNode &r) override;
   string getRequestData() override
   {
-    return "[{\"jsonrpc\": \"2.0\", \"method\": \"getcurrentnet\", \"params\": [], \"id\": 0}"
-           ",{\"jsonrpc\": \"2.0\", \"method\": \"getwork\", \"params\": [], \"id\": 1}]";
+    return "{\"jsonrpc\": \"2.0\", \"method\": \"getwork\", \"params\": [], \"id\": 1}";
   }
 };
 

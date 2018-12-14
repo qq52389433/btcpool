@@ -40,10 +40,9 @@ struct GetWorkDecred {
                 const string &target,
                 uint32_t createdAt,
                 uint32_t height,
-                NetworkDecred network,
                 uint32_t size,
                 uint16_t voters)
-    : data(data), target(target), createdAt(createdAt), height(height), network(network), size(size), voters(voters)
+    : data(data), target(target), createdAt(createdAt), height(height), size(size), voters(voters)
   {
   }
 
@@ -51,7 +50,6 @@ struct GetWorkDecred {
   string target;
   uint32_t createdAt;
   uint32_t height;
-  NetworkDecred network;
   uint32_t size;
   uint16_t voters;
 };
@@ -71,7 +69,6 @@ using GetWorkDecredMap = boost::multi_index_container<
       boost::multi_index::tag<ByBestBlockDecred>,
       boost::multi_index::composite_key<
         GetWorkDecred,
-        boost::multi_index::member<GetWorkDecred, NetworkDecred, &GetWorkDecred::network>,
         boost::multi_index::member<GetWorkDecred, uint32_t, &GetWorkDecred::height>,
         boost::multi_index::member<GetWorkDecred, uint16_t, &GetWorkDecred::voters>,
         boost::multi_index::member<GetWorkDecred, uint32_t, &GetWorkDecred::size>,

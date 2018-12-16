@@ -28,11 +28,12 @@
 #include "StratumServer.h"
 #include "StratumDecred.h"
 
-class ServerDecred;
+template <typename NetworkTraits> class ServerDecred;
 
-class JobRepositoryDecred : public JobRepositoryBase<ServerDecred> {
+template <typename NetworkTraits>
+class JobRepositoryDecred : public JobRepositoryBase<ServerDecred<NetworkTraits>> {
 public:
-  JobRepositoryDecred(const char *kafkaBrokers, const char *consumerTopic, const string &fileLastNotifyTime, ServerDecred *server);
+  JobRepositoryDecred(const char *kafkaBrokers, const char *consumerTopic, const string &fileLastNotifyTime, ServerDecred<NetworkTraits> *server);
 
   StratumJob* createStratumJob() override;
   void broadcastStratumJob(StratumJob *sjob) override;
@@ -42,12 +43,13 @@ private:
   uint16_t lastVoters_;
 };
 
-class ServerDecred : public ServerBase<JobRepositoryDecred> {
+template <typename NetworkTraits>
+class ServerDecred : public ServerBase<JobRepositoryDecred<NetworkTraits>> {
 public:
   explicit ServerDecred(int32_t shareAvgSeconds, const libconfig::Config &config);
   unique_ptr<StratumSession> createConnection(bufferevent *bev, sockaddr *saddr, uint32_t sessionID) override;
 
-  int checkShare(ShareDecred &share, shared_ptr<StratumJobEx> exJobPtr, const vector<uint8_t> &extraNonce2,
+  int checkShare(ShareDecred<NetworkTraits> &share, shared_ptr<StratumJobEx> exJobPtr, const vector<uint8_t> &extraNonce2,
                  uint32_t ntime, uint32_t nonce, const string &workerFullName);
 
 protected:
@@ -59,5 +61,7 @@ private:
   unique_ptr<StratumProtocolDecred> protocol_;
   NetworkDecred network_;
 };
+
+#include "StratumServerDecred.inl"
 
 #endif

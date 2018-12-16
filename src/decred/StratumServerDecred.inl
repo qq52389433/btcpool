@@ -22,8 +22,6 @@
  THE SOFTWARE.
  */
 
-#include "StratumServerDecred.h"
-
 #include "StratumSessionDecred.h"
 #include "StratumDecred.h"
 #include "CommonDecred.h"
@@ -44,19 +42,22 @@ static ostream& operator<<(ostream& os, const StratumJobDecred& job)
   return os;
 }
 
-JobRepositoryDecred::JobRepositoryDecred(const char *kafkaBrokers, const char *consumerTopic, const string &fileLastNotifyTime, ServerDecred *server)
-  : JobRepositoryBase<ServerDecred>(kafkaBrokers, consumerTopic, fileLastNotifyTime, server)
+template <typename NetworkTraits>
+JobRepositoryDecred<NetworkTraits>::JobRepositoryDecred(const char *kafkaBrokers, const char *consumerTopic, const string &fileLastNotifyTime, ServerDecred<NetworkTraits> *server)
+  : JobRepositoryBase<ServerDecred<NetworkTraits>>(kafkaBrokers, consumerTopic, fileLastNotifyTime, server)
   , lastHeight_(0)
   , lastVoters_(0)
 {
 }
 
-StratumJob* JobRepositoryDecred::createStratumJob()
+template <typename NetworkTraits>
+StratumJob* JobRepositoryDecred<NetworkTraits>::createStratumJob()
 {
   return new StratumJobDecred();
 }
 
-void JobRepositoryDecred::broadcastStratumJob(StratumJob *sjob)
+template <typename NetworkTraits>
+void JobRepositoryDecred<NetworkTraits>::broadcastStratumJob(StratumJob *sjob)
 {
   auto jobDecred = dynamic_cast<StratumJobDecred*>(sjob);
   if (!jobDecred) {
@@ -76,26 +77,26 @@ void JobRepositoryDecred::broadcastStratumJob(StratumJob *sjob)
   auto voters = jobDecred->header_.voters.value();
   bool moreVoters = voters > lastVoters_;
 
-  shared_ptr<StratumJobEx> jobEx(createStratumJobEx(jobDecred, isClean));
+  shared_ptr<StratumJobEx> jobEx(this->createStratumJobEx(jobDecred, isClean));
   {
-    ScopeLock sl(lock_);
+    ScopeLock sl(this->lock_);
 
     if (isClean) {
       // mark all jobs as stale, should do this before insert new job
       // stale shares will not be rejected, they will be marked as ACCEPT_STALE and have lower rewards.
-      for (auto it : exJobs_) {
+      for (auto it : this->exJobs_) {
         it.second->markStale();
       }
     }
 
     // insert new job
-    exJobs_[jobDecred->jobId_] = jobEx;
+    this->exJobs_[jobDecred->jobId_] = jobEx;
   }
 
   // We want to update jobs immediately if there are more voters for the same height block
   if (isClean || moreVoters) {
     lastVoters_ = voters;
-    sendMiningNotify(jobEx);
+    this->sendMiningNotify(jobEx);
   }
 }
 
@@ -129,8 +130,9 @@ public:
   }
 };
 
-ServerDecred::ServerDecred(int32_t shareAvgSeconds, const libconfig::Config &config)
-  : ServerBase<JobRepositoryDecred>(shareAvgSeconds)
+template <typename NetworkTraits>
+ServerDecred<NetworkTraits>::ServerDecred(int32_t shareAvgSeconds, const libconfig::Config &config)
+  : ServerBase<JobRepositoryDecred<NetworkTraits>>(shareAvgSeconds)
   , network_(NetworkDecred::MainNet)
 {
   string protocol;
@@ -163,17 +165,20 @@ ServerDecred::ServerDecred(int32_t shareAvgSeconds, const libconfig::Config &con
   }
 }
 
-unique_ptr<StratumSession> ServerDecred::createConnection(bufferevent *bev, sockaddr *saddr, uint32_t sessionID)
+template <typename NetworkTraits>
+unique_ptr<StratumSession> ServerDecred<NetworkTraits>::createConnection(bufferevent *bev, sockaddr *saddr, uint32_t sessionID)
 {
-  return boost::make_unique<StratumSessionDecred>(*this, bev, saddr, sessionID, *protocol_);
+  return boost::make_unique<StratumSessionDecred<NetworkTraits>>(*this, bev, saddr, sessionID, *protocol_);
 }
 
-JobRepository* ServerDecred::createJobRepository(const char *kafkaBrokers, const char *consumerTopic, const string &fileLastNotifyTime)
+template <typename NetworkTraits>
+JobRepository* ServerDecred<NetworkTraits>::createJobRepository(const char *kafkaBrokers, const char *consumerTopic, const string &fileLastNotifyTime)
 {
-  return new JobRepositoryDecred(kafkaBrokers, consumerTopic, fileLastNotifyTime, this);
+  return new JobRepositoryDecred<NetworkTraits>(kafkaBrokers, consumerTopic, fileLastNotifyTime, this);
 }
 
-int ServerDecred::checkShare(ShareDecred &share, shared_ptr<StratumJobEx> exJobPtr, const vector<uint8_t> &extraNonce2,
+template <typename NetworkTraits>
+int ServerDecred<NetworkTraits>::checkShare(ShareDecred<NetworkTraits> &share, shared_ptr<StratumJobEx> exJobPtr, const vector<uint8_t> &extraNonce2,
                              uint32_t ntime, uint32_t nonce, const string &workerFullName)
 {
   if (!exJobPtr || exJobPtr->isStale()) {
@@ -200,12 +205,12 @@ int ServerDecred::checkShare(ShareDecred &share, shared_ptr<StratumJobEx> exJobP
   //
   // found new block
   //
-  if (isSubmitInvalidBlock_ == true || bnBlockHash <= bnNetworkTarget) {
+  if (this->isSubmitInvalidBlock_ == true || bnBlockHash <= bnNetworkTarget) {
     // send
-    kafkaProducerSolvedShare_->produce(&foundBlock, sizeof(FoundBlockDecred));
+    this->kafkaProducerSolvedShare_->produce(&foundBlock, sizeof(FoundBlockDecred));
 
     // mark jobs as stale
-    GetJobRepository()->markAllJobsAsStale();
+    this->GetJobRepository()->markAllJobsAsStale();
 
     LOG(INFO) << ">>>> found a new block: " << blkHash.ToString()
     << ", jobId: " << share.jobid() << ", userId: " << share.userid()
@@ -220,12 +225,12 @@ int ServerDecred::checkShare(ShareDecred &share, shared_ptr<StratumJobEx> exJobP
   }
 
   // check share diff
-  auto jobTarget = NetworkParamsDecred::get(network_).powLimit / share.sharediff();
+  auto jobTarget = NetworkTraits::Diff1Target / share.sharediff();
 
   DLOG(INFO) << "blkHash: " << blkHash.ToString() << ", jobTarget: "
   << jobTarget.ToString() << ", networkTarget: " << sjob->target_.ToString();
 
-  if (isEnableSimulator_ == false && bnBlockHash > jobTarget) {
+  if (this->isEnableSimulator_ == false && bnBlockHash > jobTarget) {
     return StratumStatus::LOW_DIFFICULTY;
   }
 

@@ -103,6 +103,7 @@ public:
 // and the new version will coexist for a while.
 // If there is no forward compatibility, one of the versions of Share
 // will be considered invalid, resulting in loss of users' hashrate.
+template <typename NetworkTraits>
 class ShareDecred : public sharebase::DecredMsg
 {
 public:
@@ -163,7 +164,7 @@ public:
       return 0.0;
     }
 
-    double networkDifficulty = NetworkParamsDecred::get((NetworkDecred)network()).powLimit.getdouble() / arith_uint256().SetCompact(blkbits()).getdouble();
+    double networkDifficulty = NetworkTraits::Diff1Target.getdouble() / arith_uint256().SetCompact(blkbits()).getdouble();
 
     // Network diff may less than share diff on testnet or regression test network.
     // On regression test network, the network diff may be zero.
@@ -193,7 +194,7 @@ public:
 
   string toString() const
   {
-    double networkDifficulty = NetworkParamsDecred::get((NetworkDecred)network()).powLimit.getdouble() / arith_uint256().SetCompact(blkbits()).getdouble();
+    double networkDifficulty = NetworkTraits::Diff1Target.getdouble() / arith_uint256().SetCompact(blkbits()).getdouble();
     return Strings::Format("share(jobId: %" PRIu64 ", ip: %s, userId: %d, "
                            "workerId: %" PRId64 ", time: %u/%s, height: %u, "
                            "blkBits: %08x/%lf, shareDiff: %" PRIu64 ", status: %d/%s)",
@@ -321,12 +322,13 @@ public:
   virtual void setExtraNonces(BlockHeaderDecred &header, uint32_t extraNonce1, const vector<uint8_t> &extraNonce2) = 0;
 };
 
-class ServerDecred;
-class StratumSessionDecred;
+template <typename NetworkTraits> class ServerDecred;
+template <typename NetworkTraits> class StratumSessionDecred;
 
+template <typename NetworkTraits>
 struct StratumTraitsDecred {
-  using ServerType = ServerDecred;
-  using SessionType = StratumSessionDecred;
+  using ServerType = ServerDecred<NetworkTraits>;
+  using SessionType = StratumSessionDecred<NetworkTraits>;
   using JobDiffType = uint64_t;
   struct LocalJobType : public LocalJob {
     LocalJobType(uint64_t jobId, uint8_t shortJobId, uint32_t blkBits)

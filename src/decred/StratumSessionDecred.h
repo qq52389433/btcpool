@@ -28,9 +28,15 @@
 #include "StratumSession.h"
 #include "StratumServerDecred.h"
 
-class StratumSessionDecred : public StratumSessionBase<StratumTraitsDecred> {
+template <typename NetworkTraits>
+class StratumSessionDecred : public StratumSessionBase<StratumTraitsDecred<NetworkTraits>> {
+  using Base = StratumSessionBase<StratumTraitsDecred<NetworkTraits>>;
+  using Base::CONNECTED;
+  using Base::SUBSCRIBED;
+  using Base::AUTHENTICATED;
+  using Base::extraNonce1_;
 public:
-  StratumSessionDecred(ServerDecred &server,
+  StratumSessionDecred(ServerDecred<NetworkTraits> &server,
                        struct bufferevent *bev,
                        struct sockaddr *saddr,
                        uint32_t extraNonce1,
@@ -57,5 +63,7 @@ private:
 
   uint8_t shortJobId_;    // jobId starts from 0
 };
+
+#include "StratumSessionDecred.inl"
 
 #endif  // #ifndef STRATUM_SESSION_DECRED_H_

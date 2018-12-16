@@ -22,8 +22,6 @@
  THE SOFTWARE.
  */
 
-#include "StratumSessionDecred.h"
-
 #include "StratumMessageDispatcher.h"
 #include "StratumMinerDecred.h"
 #include "DiffController.h"
@@ -32,20 +30,22 @@
 
 #include <boost/make_unique.hpp>
 
-StratumSessionDecred::StratumSessionDecred(ServerDecred &server,
-                                           struct bufferevent *bev,
-                                           struct sockaddr *saddr,
-                                           uint32_t extraNonce1,
-                                           const StratumProtocolDecred &protocol)
-    : StratumSessionBase(server, bev, saddr, extraNonce1)
+template <typename NetworkTraits>
+StratumSessionDecred<NetworkTraits>::StratumSessionDecred(ServerDecred<NetworkTraits> &server,
+                                                          struct bufferevent *bev,
+                                                          struct sockaddr *saddr,
+                                                          uint32_t extraNonce1,
+                                                          const StratumProtocolDecred &protocol)
+    : Base(server, bev, saddr, extraNonce1)
     , protocol_(protocol)
     , shortJobId_(0) {
 }
 
-void StratumSessionDecred::sendMiningNotify(shared_ptr<StratumJobEx> exJobPtr, bool isFirstJob) {
-  if (state_ < AUTHENTICATED || exJobPtr == nullptr)
+template <typename NetworkTraits>
+void StratumSessionDecred<NetworkTraits>::sendMiningNotify(shared_ptr<StratumJobEx> exJobPtr, bool isFirstJob) {
+  if (this->state_ < AUTHENTICATED || exJobPtr == nullptr)
   {
-    LOG(ERROR) << "decred sendMiningNotify failed, state = " << state_;
+    LOG(ERROR) << "decred sendMiningNotify failed, state = " << this->state_;
     return;
   }
 
@@ -56,7 +56,7 @@ void StratumSessionDecred::sendMiningNotify(shared_ptr<StratumJobEx> exJobPtr, b
     return;
   }
 
-  auto &ljob = addLocalJob(jobDecred->jobId_, shortJobId_++, jobDecred->header_.nBits.value());
+  auto &ljob = this->addLocalJob(jobDecred->jobId_, shortJobId_++, jobDecred->header_.nBits.value());
 
   // PrevHash field is int32 reversed
   auto prevHash = reinterpret_cast<const boost::endian::little_uint32_buf_t *>(jobDecred->header_.prevBlock.begin());
@@ -77,32 +77,34 @@ void StratumSessionDecred::sendMiningNotify(shared_ptr<StratumJobEx> exJobPtr, b
                                    jobDecred->header_.nBits.value(),
                                    jobDecred->header_.timestamp.value(),
                                    exJobPtr->isClean_ ? "true" : "false");
-  sendData(notifyStr);
+  this->sendData(notifyStr);
 
   // clear localJobs_
-  clearLocalJobs();
+  this->clearLocalJobs();
 }
 
-void StratumSessionDecred::handleRequest(const std::string &idStr,
-                                      const std::string &method,
-                                      const JsonNode &jparams,
-                                      const JsonNode &jroot) {
+template <typename NetworkTraits>
+void StratumSessionDecred<NetworkTraits>::handleRequest(const std::string &idStr,
+                                                        const std::string &method,
+                                                        const JsonNode &jparams,
+                                                        const JsonNode &jroot) {
   if (method == "mining.subscribe") {
     handleRequest_Subscribe(idStr, jparams, jroot);
   }
   else if (method == "mining.authorize") {
     handleRequest_Authorize(idStr, jparams, jroot);
   }
-  else if (dispatcher_) {
-    dispatcher_->handleRequest(idStr, method, jparams, jroot);
+  else if (this->dispatcher_) {
+    this->dispatcher_->handleRequest(idStr, method, jparams, jroot);
   }
 }
 
-void StratumSessionDecred::handleRequest_Subscribe(const string &idStr,
-                                                      const JsonNode &jparams,
-                                                      const JsonNode &jroot) {
-  if (state_ != CONNECTED) {
-    responseError(idStr, StratumStatus::UNKNOWN);
+template <typename NetworkTraits>
+void StratumSessionDecred<NetworkTraits>::handleRequest_Subscribe(const string &idStr,
+                                                                  const JsonNode &jparams,
+                                                                  const JsonNode &jroot) {
+  if (this->state_ != CONNECTED) {
+    this->responseError(idStr, StratumStatus::UNKNOWN);
     return;
   }
 
@@ -121,34 +123,34 @@ void StratumSessionDecred::handleRequest_Subscribe(const string &idStr,
   //
 
   if (jparams.children()->size() < 2) {
-    responseError(idStr, StratumStatus::CLIENT_IS_NOT_SWITCHER);
+    this->responseError(idStr, StratumStatus::CLIENT_IS_NOT_SWITCHER);
     LOG(ERROR) << "A non-switcher subscribe request is detected and rejected.";
     LOG(ERROR) << "Cmake option POOL__WORK_WITH_STRATUM_SWITCHER enabled, you can only connect to the sserver via a stratum switcher.";
     return;
   }
 
-  state_ = SUBSCRIBED;
+  this->state_ = SUBSCRIBED;
 
-  setClientAgent(jparams.children()->at(0).str().substr(0, 30));  // 30 is max len
+  this->setClientAgent(jparams.children()->at(0).str().substr(0, 30));  // 30 is max len
 
   string extNonce1Str = jparams.children()->at(1).str().substr(0, 8);  // 8 is max len
   sscanf(extNonce1Str.c_str(), "%x", &extraNonce1_); // convert hex to int
 
   // receive miner's IP from stratumSwitcher
   if (jparams.children()->size() >= 3) {
-    clientIpInt_ = htonl(jparams.children()->at(2).uint32());
+    this->clientIpInt_ = htonl(jparams.children()->at(2).uint32());
 
     // ipv4
-    clientIp_.resize(INET_ADDRSTRLEN);
+    this->clientIp_.resize(INET_ADDRSTRLEN);
     struct in_addr addr;
-    addr.s_addr = clientIpInt_;
-    clientIp_ = inet_ntop(AF_INET, &addr, (char *)clientIp_.data(), (socklen_t)clientIp_.size());
-    LOG(INFO) << "client real IP: " << clientIp_;
+    addr.s_addr = this->clientIpInt_;
+    this->clientIp_ = inet_ntop(AF_INET, &addr, (char *)this->clientIp_.data(), (socklen_t)this->clientIp_.size());
+    LOG(INFO) << "client real IP: " << this->clientIp_;
   }
 
 #else
 
-  state_ = SUBSCRIBED;
+  this->state_ = SUBSCRIBED;
 
   //
   //  params[0] = client version     [optional]
@@ -157,7 +159,7 @@ void StratumSessionDecred::handleRequest_Subscribe(const string &idStr,
   //  {"id": 1, "method": "mining.subscribe", "params": ["gominer/0.2.0-decred"]}
   //
   if (jparams.children()->size() >= 1) {
-    setClientAgent(jparams.children()->at(0).str().substr(0, 30));  // 30 is max len
+    this->setClientAgent(jparams.children()->at(0).str().substr(0, 30));  // 30 is max len
   }
 
 #endif // WORK_WITH_STRATUM_SWITCHER
@@ -172,16 +174,17 @@ void StratumSessionDecred::handleRequest_Subscribe(const string &idStr,
   const string s = Strings::Format("{\"id\":%s,\"result\":[[[\"mining.set_difficulty\",\"%08x\"]"
                                    ",[\"mining.notify\",\"%08x\"]],\"%s\",%d],\"error\":null}\n",
                                    idStr.c_str(), extraNonce1_, extraNonce1_, extraNonce1Str.c_str(), StratumMiner::kExtraNonce2Size_);
-  sendData(s);
+  this->sendData(s);
 }
 
-void StratumSessionDecred::handleRequest_Authorize(const string &idStr,
-                                                   const JsonNode &jparams,
-                                                   const JsonNode &jroot)
+template <typename NetworkTraits>
+void StratumSessionDecred<NetworkTraits>::handleRequest_Authorize(const string &idStr,
+                                                                  const JsonNode &jparams,
+                                                                  const JsonNode &jroot)
 {
-  if (state_ != SUBSCRIBED)
+  if (this->state_ != SUBSCRIBED)
   {
-    responseError(idStr, StratumStatus::NOT_SUBSCRIBED);
+    this->responseError(idStr, StratumStatus::NOT_SUBSCRIBED);
     return;
   }
 
@@ -194,7 +197,7 @@ void StratumSessionDecred::handleRequest_Authorize(const string &idStr,
   //
   if (jparams.children()->size() < 1)
   {
-    responseError(idStr, StratumStatus::INVALID_USERNAME);
+    this->responseError(idStr, StratumStatus::INVALID_USERNAME);
     return;
   }
 
@@ -206,16 +209,18 @@ void StratumSessionDecred::handleRequest_Authorize(const string &idStr,
     password = jparams.children()->at(1).str();
   }
 
-  checkUserAndPwd(idStr, fullName, password);
+  this->checkUserAndPwd(idStr, fullName, password);
   return;
 }
 
-unique_ptr<StratumMiner> StratumSessionDecred::createMiner(const std::string &clientAgent,
-                                                              const std::string &workerName,
-                                                              int64_t workerId) {
-  return boost::make_unique<StratumMinerDecred>(*this,
-                                                *getServer().defaultDifficultyController_,
-                                                clientAgent,
-                                                workerName,
-                                                workerId);
+template <typename NetworkTraits>
+unique_ptr<StratumMiner> StratumSessionDecred<NetworkTraits>::createMiner(const std::string &clientAgent,
+                                                                          const std::string &workerName,
+                                                                          int64_t workerId) {
+  return boost::make_unique<StratumMinerDecred<NetworkTraits>>(
+      *this,
+      *this->getServer().defaultDifficultyController_,
+      clientAgent,
+      workerName,
+      workerId);
 }

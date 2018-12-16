@@ -88,7 +88,7 @@ BlockMaker* createBlockMaker(shared_ptr<BlockMakerDefinition> def, const string&
   else if ("BTM" == def->chainType_)
     maker = new BlockMakerBytom(def, broker.c_str(), *poolDBInfo);
   else if ("DCR" == def->chainType_)
-    maker = new BlockMakerDecred(def, broker.c_str(), *poolDBInfo);
+    maker = new BlockMakerDecred<NetworkTraitsDecred>(def, broker.c_str(), *poolDBInfo);
 
   return maker;
 }

@@ -28,6 +28,7 @@
 #include "BlockMaker.h"
 #include "StratumDecred.h"
 
+template <typename NetworkTraits>
 class BlockMakerDecred : public BlockMaker {
 public:
   BlockMakerDecred(shared_ptr<BlockMakerDefinition> def, const char *kafkaBrokers, const MysqlConnectInfo &poolDB);
@@ -39,5 +40,7 @@ private:
   void submitBlockHeader(const NodeDefinition& node, const BlockHeaderDecred& header);
   void saveBlockToDB(const FoundBlockDecred& foundBlock);
 };
+
+#include "BlockMakerDecred.inl"
 
 #endif

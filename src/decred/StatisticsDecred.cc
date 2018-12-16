@@ -24,10 +24,9 @@
 
 #include "StatisticsDecred.h"
 #include "StratumDecred.h"
-#include "DecredUtils.h"
 
 template <>
-void ShareStatsDay<ShareDecred>::processShare(uint32_t hourIdx, const ShareDecred &share) {
+void ShareStatsDay<ShareDecred<NetworkTraitsDecred>>::processShare(uint32_t hourIdx, const ShareDecred<NetworkTraitsDecred> &share) {
   ScopeLock sl(lock_);
 
   if (StratumStatus::isAccepted(share.status())) {
@@ -35,7 +34,7 @@ void ShareStatsDay<ShareDecred>::processShare(uint32_t hourIdx, const ShareDecre
     shareAccept1d_          += share.sharediff();
 
     double score = share.score();
-    double reward = GetBlockRewardDecredShare(share.height(), NetworkParamsDecred::get((NetworkDecred)share.network()));
+    double reward = NetworkTraitsDecred::GetBlockRewardShare(share.height(), static_cast<NetworkDecred>(share.network()));
     double earn = score * reward;
 
     score1h_[hourIdx] += score;
@@ -51,4 +50,4 @@ void ShareStatsDay<ShareDecred>::processShare(uint32_t hourIdx, const ShareDecre
 }
 
 ///////////////  template instantiation ///////////////
-template class ShareStatsDay<ShareDecred>;
+template class ShareStatsDay<ShareDecred<NetworkTraitsDecred>>;

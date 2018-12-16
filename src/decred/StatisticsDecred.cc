@@ -49,5 +49,30 @@ void ShareStatsDay<ShareDecred<NetworkTraitsDecred>>::processShare(uint32_t hour
   modifyHoursFlag_ |= (0x01u << hourIdx);
 }
 
+template <>
+void ShareStatsDay<ShareDecred<NetworkTraitsHcash>>::processShare(uint32_t hourIdx, const ShareDecred<NetworkTraitsHcash> &share) {
+  ScopeLock sl(lock_);
+
+  if (StratumStatus::isAccepted(share.status())) {
+    shareAccept1h_[hourIdx] += share.sharediff();
+    shareAccept1d_          += share.sharediff();
+
+    double score = share.score();
+    double reward = NetworkTraitsHcash::GetBlockRewardShare(share.height(), static_cast<NetworkDecred>(share.network()));
+    double earn = score * reward;
+
+    score1h_[hourIdx] += score;
+    score1d_          += score;
+    earn1h_[hourIdx]  += earn;
+    earn1d_           += earn;
+
+  } else {
+    shareReject1h_[hourIdx] += share.sharediff();
+    shareReject1d_          += share.sharediff();
+  }
+  modifyHoursFlag_ |= (0x01u << hourIdx);
+}
+
 ///////////////  template instantiation ///////////////
 template class ShareStatsDay<ShareDecred<NetworkTraitsDecred>>;
+template class ShareStatsDay<ShareDecred<NetworkTraitsHcash>>;

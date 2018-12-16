@@ -92,6 +92,9 @@ std::shared_ptr<ShareLogDumper> newShareLogDumper(const string &chainType, const
   else if (chainType == "DCR") {
     return std::make_shared<ShareLogDumperDecred>(chainType.c_str(), dataDir, timestamp, uids);
   }
+  else if (chainType == "HC") {
+    return std::make_shared<ShareLogDumperHcash>(chainType.c_str(), dataDir, timestamp, uids);
+  }
   else {
     LOG(FATAL) << "newShareLogDumper: unknown chain type " << chainType;
     return nullptr;
@@ -120,6 +123,9 @@ std::shared_ptr<ShareLogParser> newShareLogParser(const string &chainType, const
   }
   else if (chainType == "DCR") {
     return std::make_shared<ShareLogParserDecred>(chainType.c_str(), dataDir, timestamp, poolDBInfo, nullptr);
+  }
+  else if (chainType == "HC") {
+    return std::make_shared<ShareLogParserHcash>(chainType.c_str(), dataDir, timestamp, poolDBInfo, nullptr);
   }
   else {
     LOG(FATAL) << "newShareLogParser: unknown chain type " << chainType;
@@ -159,6 +165,11 @@ std::shared_ptr<ShareLogParserServer> newShareLogParserServer(const string &chai
     return std::make_shared<ShareLogParserServerDecred>(chainType.c_str(), dataDir,
                                                         httpdHost, httpdPort,
                                                         poolDBInfo, kFlushDBInterval, nullptr);
+  }
+  else if (chainType == "HC") {
+    return std::make_shared<ShareLogParserServerHcash>(chainType.c_str(), dataDir,
+                                                       httpdHost, httpdPort,
+                                                       poolDBInfo, kFlushDBInterval, nullptr);
   }
   else {
     LOG(FATAL) << "newShareLogParserServer: unknown chain type " << chainType;

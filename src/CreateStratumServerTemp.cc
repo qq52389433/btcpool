@@ -23,6 +23,8 @@ Server* createStratumServer(const std::string &type, const int32_t shareAvgSecon
     return new ServerBytom (shareAvgSeconds);
   else if ("DCR" == type)
     return new ServerDecred<NetworkTraitsDecred>(shareAvgSeconds, config);
+  else if ("HC" == type)
+    return new ServerDecred<NetworkTraitsHcash>(shareAvgSeconds, config);
   return nullptr;
 }
 

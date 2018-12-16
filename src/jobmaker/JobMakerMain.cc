@@ -71,7 +71,8 @@ bool isGwChain(const string &chainType)
   return ("ETH" == chainType ||
           "SIA" == chainType ||
           "BTM" == chainType ||
-          "DCR" == chainType);
+          "DCR" == chainType ||
+          "HC" == chainType);
 }
 
 shared_ptr<JobMakerHandler> createGwJobMakerHandler(shared_ptr<GwJobMakerDefinition> def) {
@@ -83,7 +84,7 @@ shared_ptr<JobMakerHandler> createGwJobMakerHandler(shared_ptr<GwJobMakerDefinit
     handler = make_shared<JobMakerHandlerSia>();
   else if (def->chainType_ == "BTM")
     handler = make_shared<JobMakerHandlerBytom>();
-  else if (def->chainType_ == "DCR")
+  else if (def->chainType_ == "DCR" || def->chainType_ == "HC")
     handler = make_shared<JobMakerHandlerDecred>();
   else
     LOG(FATAL) << "unknown chain type: " << def->chainType_;

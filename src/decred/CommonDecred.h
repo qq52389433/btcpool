@@ -82,4 +82,10 @@ struct NetworkTraitsDecred {
   static int64_t GetBlockRewardWork(uint32_t height, uint16_t voters, NetworkDecred network);
 };
 
+struct NetworkTraitsHcash {
+  static const arith_uint256 Diff1Target;
+  static int64_t GetBlockRewardShare(uint32_t height, NetworkDecred network);
+  static int64_t GetBlockRewardWork(uint32_t height, uint16_t voters, NetworkDecred network);
+};
+
 #endif

@@ -633,7 +633,7 @@ StratumServer::StratumServer(const char *ip, const unsigned short port,
                              const char *kafkaBrokers, const string &userAPIUrl,
                              const uint8_t serverId, const string &fileLastNotifyTime,
                              bool isEnableSimulator, bool isSubmitInvalidBlock,
-                             bool isDevModeEnable, float devFixedDifficulty,
+                             bool isDevModeEnable, float minerDifficulty,
                              const string &consumerTopic,
                              uint32_t maxJobDelay,
                              shared_ptr<DiffController> defaultDifficultyController,
@@ -645,7 +645,7 @@ StratumServer::StratumServer(const char *ip, const unsigned short port,
       fileLastNotifyTime_(fileLastNotifyTime),
       kafkaBrokers_(kafkaBrokers), userAPIUrl_(userAPIUrl),
       isEnableSimulator_(isEnableSimulator), isSubmitInvalidBlock_(isSubmitInvalidBlock),
-      isDevModeEnable_(isDevModeEnable), devFixedDifficulty_(devFixedDifficulty),
+      isDevModeEnable_(isDevModeEnable), minerDifficulty_(minerDifficulty),
       consumerTopic_(consumerTopic),
       maxJobDelay_(maxJobDelay),
       defaultDifficultyController_(defaultDifficultyController),
@@ -698,7 +698,7 @@ Server::Server(const int32_t shareAvgSeconds)
   , sessionIDManager_(nullptr)
 #endif
   , isDevModeEnable_(false)
-  , devFixedDifficulty_(1.0)
+  , minerDifficulty_(1.0)
   , kShareAvgSeconds_(shareAvgSeconds)
   , jobRepository_(nullptr)
   , userInfo_(nullptr)
@@ -741,27 +741,20 @@ Server::~Server() {
 
 
 bool Server::setup(StratumServer* sserver) {
-#ifdef WORK_WITH_STRATUM_SWITCHER
-  LOG(INFO) << "WORK_WITH_STRATUM_SWITCHER enabled, miners can only connect to the sserver via a stratum switcher.";
-#endif
-
   if (sserver->isEnableSimulator_) {
     isEnableSimulator_ = true;
-    LOG(WARNING) << "Simulator is enabled, all share will be accepted. "
-                 << "This option should not be enabled in a production environment!";
+    LOG(WARNING) << "Simulator is enabled, all share will be accepted";
   }
 
   if (sserver->isSubmitInvalidBlock_) {
     isSubmitInvalidBlock_ = true;
-    LOG(WARNING) << "Submit invalid block is enabled, all shares will become solved shares. "
-                 << "This option should not be enabled in a production environment!";
+    LOG(WARNING) << "submit invalid block is enabled, all block will be submited";
   }
 
   if (sserver->isDevModeEnable_) {
     isDevModeEnable_ = true;
-    devFixedDifficulty_ = sserver->devFixedDifficulty_;
-    LOG(WARNING) << "Development mode is enabled with fixed difficulty: " << devFixedDifficulty_
-                 << ". This option should not be enabled in a production environment!";
+    minerDifficulty_ = sserver->minerDifficulty_;
+    LOG(INFO) << "development mode is enabled with difficulty: " << minerDifficulty_;
   }
 
   defaultDifficultyController_ = sserver->defaultDifficultyController_;

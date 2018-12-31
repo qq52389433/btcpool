@@ -440,15 +440,9 @@ bool NMCAuxBlockMaker::callRpcCreateAuxBlock(string &resp) {
   // -d '{"jsonrpc": "1.0", "id":"curltest", "method": "createauxblock","params": []}'
   // -H 'content-type: text/plain;' "http://127.0.0.1:8336"
   //
-  string request = "";
-  if (useCreateAuxBlockInterface_) {
-    request = "{\"jsonrpc\":\"1.0\",\"id\":\"1\",\"method\":\"createauxblock\",\"params\":[\"";
-    request += coinbaseAddress_; 
-    request += "\"]}";
-  } else {
-    request = "{\"jsonrpc\":\"1.0\",\"id\":\"1\",\"method\":\"getauxblock\",\"params\":[]}";
-  }
-
+  string request = "{\"jsonrpc\":\"1.0\",\"id\":\"1\",\"method\":\"createauxblock\",\"params\":[\"";
+  request += coinbaseAddress_;
+  request += "\"]}";
   bool res = blockchainNodeRpcCall(rpcAddr_.c_str(), rpcUserpass_.c_str(),
                              request.c_str(), resp);
   if (!res) {
@@ -537,6 +531,7 @@ void NMCAuxBlockMaker::submitAuxblockMsg(bool checkTime) {
       lastCallTime_ + kRpcCallInterval_ > time(nullptr)) {
     return;
   }
+
   const string auxMsg = makeAuxBlockMsg();
   if (auxMsg.length() == 0) {
     LOG(ERROR) << "createauxblock failure";
@@ -628,10 +623,11 @@ bool NMCAuxBlockMaker::init() {
       return false;
     }
 
-    useCreateAuxBlockInterface_ = (response.find("createauxblock") == std::string::npos ||
-        response.find("submitauxblock") == std::string::npos) ? false : true;
-
-    LOG(INFO) << "namecoind " << (useCreateAuxBlockInterface_ ? " " : "doesn't ") << "support rpc commands: createauxblock and submitauxblock";
+    if (response.find("createauxblock") == std::string::npos ||
+        response.find("submitauxblock") == std::string::npos) {
+      LOG(ERROR) << "namecoind doesn't support rpc commands: createauxblock and submitauxblock";
+      return false;
+    }
   }
 
   if (isCheckZmq_ && !checkNamecoindZMQ())

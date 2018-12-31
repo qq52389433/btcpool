@@ -121,8 +121,6 @@ protected:
   thread threadConsumeNamecoinSolvedShare_;
   thread threadConsumeRskSolvedShare_;
 
-  std::map<std::string/*rpcaddr*/, bool/*isSupportSubmitAuxBlock*/> isAddrSupportSubmitAux_;
-
   void runThreadConsumeRawGbt();
   void runThreadConsumeStratumJob();
   void runThreadConsumeNamecoinSolvedShare();

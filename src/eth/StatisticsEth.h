@@ -52,7 +52,10 @@ struct GlobalShareEth {
     return false;
   }
 };
+
 ////////////////////////////  Alias  ////////////////////////////
 using DuplicateShareCheckerEth = DuplicateShareCheckerT<ShareEth, GlobalShareEth>;
+using DuplicateShareCheckerNoStaleEth = DuplicateShareCheckerT<ShareNoStaleEth, GlobalShareEth>;
+using DuplicateShareCheckerWithStaleEth = DuplicateShareCheckerT<ShareWithStaleEth, GlobalShareEth>;
 
 #endif  // STATISTICS_ETH_H_

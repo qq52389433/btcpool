@@ -26,20 +26,15 @@
 
 #include "RedisConnection.h"
 
-
 /////////////////////////////// RedisResult ///////////////////////////////
 
-RedisResult::RedisResult() :
-  reply_(nullptr) {
-}
+RedisResult::RedisResult()
+  : reply_(nullptr) {}
 
-RedisResult::RedisResult(redisReply *reply) :
-  reply_(reply) {
-}
+RedisResult::RedisResult(redisReply *reply)
+  : reply_(reply) {}
 
-RedisResult::RedisResult(RedisResult &&other) {
-  reset(other.reply_);
-}
+RedisResult::RedisResult(RedisResult &&other) { reset(other.reply_); }
 
 RedisResult::~RedisResult() {
   if (reply_ != nullptr) {
@@ -49,45 +44,33 @@ RedisResult::~RedisResult() {
 }
 
 void RedisResult::reset(redisReply *reply) {
-  if (reply_ != nullptr) {
-    freeReplyObject(reply_);
-  }
+  if (reply_ != nullptr) { freeReplyObject(reply_); }
   reply_ = reply;
 }
 
-bool RedisResult::empty() {
-  return reply_ == nullptr;
-}
+bool RedisResult::empty() { return reply_ == nullptr; }
 
 int RedisResult::type() {
-  if (empty()) {
-    return REDIS_REPLY_NIL;
-  }
+  if (empty()) { return REDIS_REPLY_NIL; }
   return reply_->type;
 }
 
 string RedisResult::str() {
-  if (empty()) {
-    return "";
-  }
-  if (reply_->str == nullptr) {
-    return "";
-  }
+  if (empty()) { return ""; }
+  if (reply_->str == nullptr) { return ""; }
   return string(reply_->str, reply_->len);
 }
 
 long long RedisResult::integer() {
-  if (empty()) {
-    return 0;
-  }
+  if (empty()) { return 0; }
   return reply_->integer;
 }
 
 /////////////////////////////// RedisConnection ///////////////////////////////
 
-RedisConnection::RedisConnection(const RedisConnectInfo &connInfo) :
-  connInfo_(connInfo), conn_(nullptr) {
-}
+RedisConnection::RedisConnection(const RedisConnectInfo &connInfo)
+  : connInfo_(connInfo)
+  , conn_(nullptr) {}
 
 bool RedisConnection::open() {
   conn_ = redisConnect(connInfo_.host_.c_str(), connInfo_.port_);
@@ -96,7 +79,7 @@ bool RedisConnection::open() {
     LOG(ERROR) << "Connect to redis failed: conn_ is nullptr";
     return false;
   }
-  
+
   if (conn_->err) {
     LOG(ERROR) << "Connect to redis failed: " << conn_->errstr;
     close();
@@ -115,7 +98,8 @@ bool RedisConnection::open() {
     }
 
     if (result.type() != REDIS_REPLY_STATUS || result.str() != "OK") {
-      LOG(ERROR) << "redis auth failed: result is " << result.type() << " (" << result.str() << "), "
+      LOG(ERROR) << "redis auth failed: result is " << result.type() << " ("
+                 << result.str() << "), "
                  << "expected: " << REDIS_REPLY_STATUS << " (OK).";
       close();
       return false;
@@ -143,7 +127,8 @@ bool RedisConnection::_ping() {
   }
 
   if (result.type() != REDIS_REPLY_STATUS || result.str() != "PONG") {
-    LOG(ERROR) << "ping redis failed: result is " << result.type() << " (" << result.str() << "), "
+    LOG(ERROR) << "ping redis failed: result is " << result.type() << " ("
+               << result.str() << "), "
                << "expected: " << REDIS_REPLY_STATUS << " (PONG).";
     return false;
   }
@@ -153,28 +138,22 @@ bool RedisConnection::_ping() {
 
 bool RedisConnection::ping() {
   if (conn_ == nullptr) {
-    if (!open()) {
-      return false;
-    }
+    if (!open()) { return false; }
   }
 
   if (!_ping()) {
     LOG(INFO) << "RedisConnection: ping failed, try reconnect";
     // try reconnect
     close();
-    if (!open()) {
-      return false;
-    }
-    if (!_ping()) {
-      return false;
-    }
+    if (!open()) { return false; }
+    if (!_ping()) { return false; }
   }
 
   return true;
 }
 
 RedisResult RedisConnection::execute(const string &command) {
-  return RedisResult((redisReply*)redisCommand(conn_, command.c_str()));
+  return RedisResult((redisReply *)redisCommand(conn_, command.c_str()));
 }
 
 RedisResult RedisConnection::execute(initializer_list<const string> args) {
@@ -185,19 +164,20 @@ RedisResult RedisConnection::execute(initializer_list<const string> args) {
   auto arg = args.begin();
   size_t i = 0;
 
-  while (arg != args.end()){
+  while (arg != args.end()) {
     argv[i] = arg->c_str();
     argvlen[i] = arg->size();
-    
+
     arg++;
     i++;
   }
 
-  auto result = RedisResult((redisReply*)redisCommandArgv(conn_, argc, argv, argvlen));
+  auto result =
+      RedisResult((redisReply *)redisCommandArgv(conn_, argc, argv, argvlen));
 
-  delete []argv;
-  delete []argvlen;
-  
+  delete[] argv;
+  delete[] argvlen;
+
   return result;
 }
 
@@ -209,19 +189,20 @@ RedisResult RedisConnection::execute(const vector<string> &args) {
   auto arg = args.begin();
   size_t i = 0;
 
-  while (arg != args.end()){
+  while (arg != args.end()) {
     argv[i] = arg->c_str();
     argvlen[i] = arg->size();
-    
+
     arg++;
     i++;
   }
 
-  auto result = RedisResult((redisReply*)redisCommandArgv(conn_, argc, argv, argvlen));
+  auto result =
+      RedisResult((redisReply *)redisCommandArgv(conn_, argc, argv, argvlen));
 
-  delete []argv;
-  delete []argvlen;
-  
+  delete[] argv;
+  delete[] argvlen;
+
   return result;
 }
 
@@ -237,18 +218,18 @@ void RedisConnection::prepare(initializer_list<const string> args) {
   auto arg = args.begin();
   size_t i = 0;
 
-  while (arg != args.end()){
+  while (arg != args.end()) {
     argv[i] = arg->c_str();
     argvlen[i] = arg->size();
-    
+
     arg++;
     i++;
   }
 
   redisAppendCommandArgv(conn_, argc, argv, argvlen);
-  
-  delete []argv;
-  delete []argvlen;
+
+  delete[] argv;
+  delete[] argvlen;
 }
 
 void RedisConnection::prepare(const vector<string> &args) {
@@ -259,22 +240,22 @@ void RedisConnection::prepare(const vector<string> &args) {
   auto arg = args.begin();
   size_t i = 0;
 
-  while (arg != args.end()){
+  while (arg != args.end()) {
     argv[i] = arg->c_str();
     argvlen[i] = arg->size();
-    
+
     arg++;
     i++;
   }
 
   redisAppendCommandArgv(conn_, argc, argv, argvlen);
-  
-  delete []argv;
-  delete []argvlen;
+
+  delete[] argv;
+  delete[] argvlen;
 }
 
 RedisResult RedisConnection::execute() {
   void *reply;
   redisGetReply(conn_, &reply);
-  return RedisResult((redisReply*)reply);
+  return RedisResult((redisReply *)reply);
 }

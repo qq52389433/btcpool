@@ -31,18 +31,20 @@
 
 using namespace std;
 
-//////////////////////////////////// JobRepositorySia /////////////////////////////////
-JobRepositorySia::JobRepositorySia(const char *kafkaBrokers, const char *consumerTopic, const string &fileLastNotifyTime, ServerSia *server) : 
-  JobRepositoryBase(kafkaBrokers, consumerTopic, fileLastNotifyTime, server)
-{
+//////////////////////////////////// JobRepositorySia
+////////////////////////////////////
+JobRepositorySia::JobRepositorySia(
+    const char *kafkaBrokers,
+    const char *consumerTopic,
+    const string &fileLastNotifyTime,
+    ServerSia *server)
+  : JobRepositoryBase(kafkaBrokers, consumerTopic, fileLastNotifyTime, server) {
 }
 
-JobRepositorySia::~JobRepositorySia()
-{
+JobRepositorySia::~JobRepositorySia() {}
 
-}
-
-shared_ptr<StratumJobEx> JobRepositorySia::createStratumJobEx(shared_ptr<StratumJob> sjob, bool isClean){
+shared_ptr<StratumJobEx> JobRepositorySia::createStratumJobEx(
+    shared_ptr<StratumJob> sjob, bool isClean) {
   return std::make_shared<StratumJobEx>(sjob, isClean);
 }
 
@@ -53,8 +55,7 @@ void JobRepositorySia::broadcastStratumJob(shared_ptr<StratumJob> sjob) {
     ScopeLock sl(lock_);
 
     // mark all jobs as stale, should do this before insert new job
-    for (auto it : exJobs_)
-      it.second->markStale();
+    for (auto it : exJobs_) it.second->markStale();
 
     // insert new job
     exJobs_[sjob->jobId_] = exJob;
@@ -64,25 +65,21 @@ void JobRepositorySia::broadcastStratumJob(shared_ptr<StratumJob> sjob) {
 }
 
 ////////////////////////////////// ServierSia ///////////////////////////////
-ServerSia::~ServerSia()
-{
+ServerSia::~ServerSia() {}
 
-}
-
-unique_ptr<StratumSession> ServerSia::createConnection(struct bufferevent *bev,
-                                                             struct sockaddr *saddr,
-                                                             const uint32_t sessionID) {
+unique_ptr<StratumSession> ServerSia::createConnection(
+    struct bufferevent *bev, struct sockaddr *saddr, const uint32_t sessionID) {
   return boost::make_unique<StratumSessionSia>(*this, bev, saddr, sessionID);
 }
 
-JobRepository *ServerSia::createJobRepository(const char *kafkaBrokers,
-                                            const char *consumerTopic,
-                                           const string &fileLastNotifyTime)
-{
-  return new JobRepositorySia(kafkaBrokers, consumerTopic, fileLastNotifyTime, this);
+JobRepository *ServerSia::createJobRepository(
+    const char *kafkaBrokers,
+    const char *consumerTopic,
+    const string &fileLastNotifyTime) {
+  return new JobRepositorySia(
+      kafkaBrokers, consumerTopic, fileLastNotifyTime, this);
 }
 
 void ServerSia::sendSolvedShare2Kafka(uint8_t *buf, int len) {
-   kafkaProducerSolvedShare_->produce(buf, len);
+  kafkaProducerSolvedShare_->produce(buf, len);
 }
-

@@ -49,13 +49,11 @@
 using namespace std;
 using namespace libconfig;
 
-
 static vector<shared_ptr<GwMaker>> gGwMakers;
 
 void handler(int sig) {
-  for (auto gwMaker: gGwMakers) {
-    if (gwMaker)
-      gwMaker->stop();
+  for (auto gwMaker : gGwMakers) {
+    if (gwMaker) gwMaker->stop();
   }
 }
 
@@ -67,7 +65,7 @@ void usage() {
 shared_ptr<GwMakerHandler> createGwMakerHandler(const GwMakerDefinition &def) {
   shared_ptr<GwMakerHandler> handler;
 
-  if      (def.chainType_ == "ETH")
+  if (def.chainType_ == "ETH")
     handler = make_shared<GwMakerHandlerEth>();
   else if (def.chainType_ == "SIA")
     handler = make_shared<GwMakerHandlerSia>();
@@ -85,12 +83,11 @@ shared_ptr<GwMakerHandler> createGwMakerHandler(const GwMakerDefinition &def) {
   return handler;
 }
 
-GwMakerDefinition createGwMakerDefinition(const Setting &setting)
-{
+GwMakerDefinition createGwMakerDefinition(const Setting &setting) {
   GwMakerDefinition def;
 
-  readFromSetting(setting, "chain_type",  def.chainType_);
-  readFromSetting(setting, "rpc_addr",    def.rpcAddr_);
+  readFromSetting(setting, "chain_type", def.chainType_);
+  readFromSetting(setting, "rpc_addr", def.rpcAddr_);
   readFromSetting(setting, "rpc_userpwd", def.rpcUserPwd_);
   readFromSetting(setting, "rawgw_topic", def.rawGwTopic_);
   readFromSetting(setting, "rpc_interval", def.rpcInterval_);
@@ -103,21 +100,24 @@ GwMakerDefinition createGwMakerDefinition(const Setting &setting)
   return def;
 }
 
-void createGwMakers(const libconfig::Config &cfg, const string &brokers, vector<shared_ptr<GwMaker>> &makers)
-{
+void createGwMakers(
+    const libconfig::Config &cfg,
+    const string &brokers,
+    vector<shared_ptr<GwMaker>> &makers) {
   const Setting &root = cfg.getRoot();
   const Setting &workerDefs = root["gw_workers"];
 
-  for (int i = 0; i < workerDefs.getLength(); i++)
-  {
+  for (int i = 0; i < workerDefs.getLength(); i++) {
     GwMakerDefinition def = createGwMakerDefinition(workerDefs[i]);
 
     if (!def.enabled_) {
-      LOG(INFO) << "chain: " << def.chainType_ << ", topic: " << def.rawGwTopic_ << ", disabled.";
+      LOG(INFO) << "chain: " << def.chainType_ << ", topic: " << def.rawGwTopic_
+                << ", disabled.";
       continue;
     }
-    
-    LOG(INFO) << "chain: " << def.chainType_ << ", topic: " << def.rawGwTopic_ << ", enabled.";
+
+    LOG(INFO) << "chain: " << def.chainType_ << ", topic: " << def.rawGwTopic_
+              << ", enabled.";
 
     auto handle = createGwMakerHandler(def);
     makers.push_back(std::make_shared<GwMaker>(handle, brokers));
@@ -125,13 +125,12 @@ void createGwMakers(const libconfig::Config &cfg, const string &brokers, vector<
 }
 
 void workerThread(shared_ptr<GwMaker> gwMaker) {
-  if (gwMaker)
-    gwMaker->run();
+  if (gwMaker) gwMaker->run();
 }
 
 int main(int argc, char **argv) {
   char *optLogDir = NULL;
-  char *optConf   = NULL;
+  char *optConf = NULL;
   int c;
 
   if (argc <= 1) {
@@ -140,15 +139,10 @@ int main(int argc, char **argv) {
   }
   while ((c = getopt(argc, argv, "c:l:h")) != -1) {
     switch (c) {
-      case 'c':
-        optConf = optarg;
-        break;
-      case 'l':
-        optLogDir = optarg;
-        break;
-      case 'h': default:
-        usage();
-        exit(0);
+    case 'c': optConf = optarg; break;
+    case 'l': optLogDir = optarg; break;
+    case 'h':
+    default: usage(); exit(0);
     }
   }
 
@@ -161,25 +155,24 @@ int main(int argc, char **argv) {
   }
   // Log messages at a level >= this flag are automatically sent to
   // stderr in addition to log files.
-  FLAGS_stderrthreshold = 3;    // 3: FATAL
-  FLAGS_max_log_size    = 100;  // max log file size 100 MB
-  FLAGS_logbuflevel     = -1;   // don't buffer logs
+  FLAGS_stderrthreshold = 3; // 3: FATAL
+  FLAGS_max_log_size = 100; // max log file size 100 MB
+  FLAGS_logbuflevel = -1; // don't buffer logs
   FLAGS_stop_logging_if_full_disk = true;
 
   LOG(INFO) << BIN_VERSION_STRING("gwmaker");
 
   // Read the file. If there is an error, report it and exit.
   libconfig::Config cfg;
-  try
-  {
+  try {
     cfg.readFile(optConf);
-  } catch(const FileIOException &fioex) {
+  } catch (const FileIOException &fioex) {
     std::cerr << "I/O error while reading file." << std::endl;
-    return(EXIT_FAILURE);
-  } catch(const ParseException &pex) {
+    return (EXIT_FAILURE);
+  } catch (const ParseException &pex) {
     std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
-    << " - " << pex.getError() << std::endl;
-    return(EXIT_FAILURE);
+              << " - " << pex.getError() << std::endl;
+    return (EXIT_FAILURE);
   }
 
   // lock cfg file:
@@ -191,10 +184,9 @@ int main(int argc, char **argv) {
   }*/
 
   signal(SIGTERM, handler);
-  signal(SIGINT,  handler);
+  signal(SIGINT, handler);
 
-  try
-  {
+  try {
 
     vector<shared_ptr<thread>> workers;
     string brokers = cfg.lookup("kafka.brokers");
@@ -207,13 +199,12 @@ int main(int argc, char **argv) {
     createGwMakers(cfg, brokers, gGwMakers);
 
     // init & run GwMaker
-    for (auto gwMaker : gGwMakers)
-    {
+    for (auto gwMaker : gGwMakers) {
       if (gwMaker->init()) {
         workers.push_back(std::make_shared<thread>(workerThread, gwMaker));
-      }
-      else {
-        LOG(FATAL) << "gwmaker init failure, chain: " << gwMaker->getChainType() << ", topic: " << gwMaker->getRawGwTopic();
+      } else {
+        LOG(FATAL) << "gwmaker init failure, chain: " << gwMaker->getChainType()
+                   << ", topic: " << gwMaker->getRawGwTopic();
       }
     }
 
@@ -225,12 +216,8 @@ int main(int argc, char **argv) {
         LOG(INFO) << "worker exit";
       }
     }
-  
-  }
-  catch (std::exception &e)
-  {
-    LOG(FATAL) << "exception: " << e.what();
-  }
+
+  } catch (std::exception &e) { LOG(FATAL) << "exception: " << e.what(); }
 
   LOG(INFO) << "gwmaker exit";
   google::ShutdownGoogleLogging();

@@ -66,7 +66,7 @@ void usage() {
 //   string broker = cfg.lookup("kafka.brokers");
 
 //   BlockMaker *maker = nullptr;
-//   if ("BTC" == type) 
+//   if ("EAC" == type) 
 //     maker = new BlockMaker(broker.c_str(), *poolDBInfo);
 //   else
 //     maker = new BlockMakerEth(broker.c_str(), *poolDBInfo);

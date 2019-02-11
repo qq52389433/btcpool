@@ -78,9 +78,13 @@
 
   namespace BitcoinUtils
   {
+    // -- by eac
     inline bool IsValidDestinationString(const std::string &addr)
+    //inline bool IsValidDestinationString(const std::string& addr)
     {
       return ::IsValidDestinationString(addr);
+      // -- by eac
+      //return true; //::IsValidDestinationString(addr, Params());
     }
     inline CTxDestination DecodeDestination(const std::string& str)
     {

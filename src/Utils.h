@@ -28,7 +28,9 @@
 #include <sstream>
 #include <vector>
 
+// -- by eac ltcoin矿池需要用到的头文件
 #include <utilstrencodings.h>
+//#include "utilstrencodings.h"
 
 #include <libconfig.h++>
 #include <glog/logging.h>

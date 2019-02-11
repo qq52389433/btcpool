@@ -63,7 +63,7 @@ if(NOT CHAIN_TYPE)
 endif()
 # Bitcoin
 if (CHAIN_TYPE STREQUAL "EAC")
-  set(CHAIN_NAME "Earthcoin Core")
+  set(CHAIN_NAME "Bitcoin Core")
   set(POOL__DEB_PACKNAME_POSTFIX "${POOL__DEB_PACKNAME_POSTFIX}-bitcoin")
   set(POOL__DEFAULT_INSTALL_PREFIX "/work/btcpool.btc")
 
@@ -78,7 +78,7 @@ if (CHAIN_TYPE STREQUAL "EAC")
 
 # Earthcoin
 elseif(CHAIN_TYPE STREQUAL "EAC")
-  set(CHAIN_NAME "Earthcoin Core")
+  set(CHAIN_NAME "Bitcoin Core")
   set(POOL__DEB_PACKNAME_POSTFIX "${POOL__DEB_PACKNAME_POSTFIX}-earthcoin")
   set(POOL__DEFAULT_INSTALL_PREFIX "/work/btcpool.eac")
 

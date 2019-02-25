@@ -62,7 +62,7 @@ if(NOT CHAIN_TYPE)
   message(FATAL_ERROR "Chain type not defined! (-DCHAIN_TYPE=BTC|BCH|UBTC|SBTC)")
 endif()
 # Bitcoin
-if (CHAIN_TYPE STREQUAL "EAC")
+if (CHAIN_TYPE STREQUAL "BTC")
   set(CHAIN_NAME "Bitcoin Core")
   set(POOL__DEB_PACKNAME_POSTFIX "${POOL__DEB_PACKNAME_POSTFIX}-bitcoin")
   set(POOL__DEFAULT_INSTALL_PREFIX "/work/btcpool.btc")
@@ -72,18 +72,18 @@ if (CHAIN_TYPE STREQUAL "EAC")
   endif()
 
   add_definitions(-DCHAIN_TYPE_BTC)
-  add_definitions(-DCHAIN_TYPE_STR="EAC")
+  add_definitions(-DCHAIN_TYPE_STR="BTC")
   add_definitions(-DKAFKA_TOPIC_PREFIX="") # for compatibility with old deployments, let it empty.
   add_definitions(-DZOOKEEPER_NODE_POSTFIX="") # for compatibility with old deployments, let it empty.
 
 # Earthcoin
-elseif(CHAIN_TYPE STREQUAL "EAC")
+elseif(CHAIN_TYPE STREQUAL "BTC")
   set(CHAIN_NAME "Bitcoin Core")
   set(POOL__DEB_PACKNAME_POSTFIX "${POOL__DEB_PACKNAME_POSTFIX}-earthcoin")
   set(POOL__DEFAULT_INSTALL_PREFIX "/work/btcpool.eac")
 
   add_definitions(-DCHAIN_TYPE_EAC)
-  add_definitions(-DCHAIN_TYPE_STR="EAC")
+  add_definitions(-DCHAIN_TYPE_STR="BTC")
   add_definitions(-DKAFKA_TOPIC_PREFIX="") # for compatibility with old deployments, let it empty.
   add_definitions(-DZOOKEEPER_NODE_POSTFIX="") # for compatibility with old deployments, let it empty.
 
@@ -267,7 +267,7 @@ set(BITCOIN_LIBRARIES
   "${CHAIN_SRC_ROOT}/src/libbitcoin_consensus.a"
   "${CHAIN_SRC_ROOT}/src/libbitcoin_util.a")
 
-if(CHAIN_TYPE STREQUAL "EAC" OR CHAIN_TYPE STREQUAL "BCH")
+if(CHAIN_TYPE STREQUAL "BTC" OR CHAIN_TYPE STREQUAL "BCH")
 set(BITCOIN_LIBRARIES ${BITCOIN_LIBRARIES}
   "${CHAIN_SRC_ROOT}/src/crypto/libbitcoin_crypto_base.a"
   "${CHAIN_SRC_ROOT}/src/crypto/libbitcoin_crypto_shani.a"

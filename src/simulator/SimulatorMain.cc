@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
     evthread_use_pthreads();
 
     // register stratum client factories
-    StratumClient::registerFactory<StratumClient>("EAC");
+    StratumClient::registerFactory<StratumClient>("BTC");
     StratumClient::registerFactory<StratumClient>("DCR");
     StratumClient::registerFactory<StratumClientEth>("ETH");
 
